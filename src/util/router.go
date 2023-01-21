@@ -5,16 +5,18 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"embed"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 )
 
 var (
@@ -22,6 +24,7 @@ var (
 	fs         http.FileSystem
 	fileServer http.Handler
 	client     = resty.New()
+	Static     embed.FS
 )
 
 func init() {
@@ -31,9 +34,28 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 	Engine = gin.Default()
 	Engine.Use(GinLogger())
+
+	// Engine.StaticFS("/vue", http.FS(Static))
+	Engine.Any("/ui/*filepath", staticFs)
+	// 匹配vue中的/v/*链接，跳转至vue入口文件，vue会自动进行路由
+	Engine.GET("/ui", getUi)
+	// 匹配/链接，重定向到主页
+	Engine.GET("/", firstPage)
+
 	Engine.PUT("/:context/:libName/*filePath", put)
 	Engine.GET("/:context/:libName/*filePath", get)
 	Engine.HEAD("/:context/:libName/*filePath", get)
+}
+func staticFs(c *gin.Context) {
+	staticServer := http.FileServer(http.FS(Static))
+	staticServer.ServeHTTP(c.Writer, c.Request)
+}
+func getUi(c *gin.Context) {
+	c.Request.URL.Path = "/ui/index.html"
+	Engine.HandleContext(c)
+}
+func firstPage(c *gin.Context) {
+	c.Redirect(http.StatusFound, "/ui/")
 }
 
 func get(c *gin.Context) {

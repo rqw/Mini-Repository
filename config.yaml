@@ -1,13 +1,13 @@
 listen: 0.0.0.0 # 监听地址
 port: 8880 # 监听端口
 logging:
-  path: /data/log # 文件日志保存地址, 默认为空, 即不写入文件
+  path: /Users/renqiwei/project/Maven-Go/data/logs # 文件日志保存地址, 默认为空, 即不写入文件
   level: debug # 日志级别
-context: maven # 基础路径
-localRepository: /data/data # 本地仓库地址
+context: repos # 基础路径
+localRepository: /Users/renqiwei/project/Maven-Go/data/repos # 本地仓库地址
 user: # 认证用户配置, 支持多个
-  - name: user
-    password: password
+  - name: admin
+    password: 123456
 repository: # 仓库设置
   - id: public # 仓库ID
     name: public repository # 名字, 随意
@@ -19,4 +19,4 @@ repository: # 仓库设置
       - https://repo1.maven.org/maven2
   - id: private
     name: private repository
-    mode: 2
+    mode: 6

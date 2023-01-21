@@ -4,10 +4,11 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/creasty/defaults"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 var (
@@ -24,7 +25,7 @@ var config = &Config{
 type Config struct {
 	Listen          string        `yaml:"listen" default:"localhost"`
 	Port            string        `yaml:"port" default:"8880"`
-	Context         string        `yaml:"context" default:"maven"`
+	Context         string        `yaml:"context" default:"repos"`
 	LocalRepository string        `yaml:"localRepository" default:"."`
 	User            []*User       `yaml:"user" default:"[{\"Name\":\"user\",\"Password\":\"password\"}]"`
 	Repository      []*Repository `yaml:"repository" default:"[{\"Id\":\"public\",\"Name\":\"mirror\",\"Mirror\":[\"https://repo1.maven.org/maven2\",\"https://maven.aliyun.com/nexus/content/repositories/public\"]}]"`
@@ -98,6 +99,6 @@ func init() {
 			repository.Target = repository.Id
 		}
 		config.RepositoryStore[repository.Id] = repository
-		log.Infof("repository: http://%s:%s/%s/%s local dirname: %s", config.Listen, config.Port, config.Context, repository.Id, repository.Target)
+		log.Infof("repository: http://%s:%s/%s/repos/%s local dirname: %s", config.Listen, config.Port, config.Context, repository.Id, repository.Target)
 	}
 }
