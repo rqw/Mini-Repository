@@ -1,4 +1,4 @@
-module Maven-Go
+module Mini-Repository
 
 go 1.19
 

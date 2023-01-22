@@ -1,14 +1,14 @@
 HUB_USER = f763180872
-NAME = maven-go
+NAME = mini-repository
 
 .PHONY: clean
 
 build: clean
 	go mod tidy
-	go build -o MavenGo src/main.go
-	chmod a+x MavenGo
+	go build -o MiniRepos src/main.go
+	chmod a+x MiniRepos
 run: build
-	./MavenGo
+	./MiniRepos
 docker: clean
 	docker build --no-cache -t $(NAME) .
 init: clean
@@ -25,4 +25,4 @@ push: init
 clean:
 	-docker images | egrep "<none>" | awk '{print $$3}' | xargs docker rmi
 	-docker ps -a | grep "\"buildkitd\"" | awk '{print $$1}' | xargs docker rm -f
-	-rm -rf MavenGo go go.sum
+	-rm -rf MiniRepos go go.sum

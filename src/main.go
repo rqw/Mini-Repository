@@ -1,7 +1,8 @@
 package main
 
 import (
-	"Maven-Go/src/util"
+	"Mini-Repository/src/user"
+	"Mini-Repository/src/util"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,8 @@ var Static embed.FS
 func main() {
 	config := util.LoadConfig()
 	util.Static = Static
+	util.RouterRegister()
+	user.RouterRegister()
 	if bytes, err := json.Marshal(config); err == nil {
 		log.Debugf("启动参数: %s", bytes)
 	} else {

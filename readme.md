@@ -1,33 +1,20 @@
-该项目借鉴了[maven-manager](https://gitee.com/zlbroot/maven-manager), maven-manager使用java开发, 我在树莓派上部署时, 发现内存实在捉急, 所以用Go重新实现了一遍
-### 使用Docker部署
-```shell
-docker pull f763180872/maven-go:latest
-
-docker run -d --name maven-go \
-  -v $PWD/config.yaml:/root/config.yaml \
-  -v $PWD/data:/data \
-  --restart always \
-  -p 8880:8880 \
-  f763180872/maven-go
-```
-config.yaml为启动配置, 默认配置见`配置文件说明`
-data为数据保存目录
+该项目基于[Maven-Go](https://github.com/fanxcv/Maven-Go)扩展
 ### 自编译
-本人使用的Go版本为: `1.18.3`
+本人使用的Go版本为: `1.19.3`
 ```shell
-git clone --depth 1 https://github.com/fanxcv/Maven-Go.git
-cd Maven-Go
+git clone --depth 1 https://gitee.com/renqiwei/mini-repository.git
+cd mini-repository
 # 使用make编译二进制文件
 make
 # 本地编译docker镜像
 make docker
 # 手动编译命令
 go mod tidy
-go build -o MavenGo src/main.go
+go build -o MiniRepos src/main.go
 # 交叉编译
 # CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o MavenGo src/main.go
-chmod a+x MavenGo
-./MavenGo -c config.yaml
+chmod a+x MiniRepos
+./MiniRepos -c config.yaml
 ```
 ### 启动参数
 启动时, 可以使用-c指定配置文件路径, 默认加载同目录下的config.yaml

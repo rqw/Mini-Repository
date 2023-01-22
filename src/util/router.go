@@ -1,14 +1,10 @@
 package util
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/sha512"
 	"embed"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -34,14 +30,16 @@ func init() {
 	gin.SetMode(gin.ReleaseMode)
 	Engine = gin.Default()
 	Engine.Use(GinLogger())
+	//Engine.Use(Cors())
 
+}
+func RouterRegister() {
 	// Engine.StaticFS("/vue", http.FS(Static))
 	Engine.Any("/ui/*filepath", staticFs)
 	// 匹配vue中的/v/*链接，跳转至vue入口文件，vue会自动进行路由
 	Engine.GET("/ui", getUi)
 	// 匹配/链接，重定向到主页
 	Engine.GET("/", firstPage)
-
 	Engine.PUT("/:context/:libName/*filePath", put)
 	Engine.GET("/:context/:libName/*filePath", get)
 	Engine.HEAD("/:context/:libName/*filePath", get)
@@ -133,7 +131,7 @@ func put(c *gin.Context) {
 	}
 
 	length, err1 := strconv.Atoi(c.GetHeader("Content-Length"))
-	data, err2 := ioutil.ReadAll(c.Request.Body)
+	data, err2 := io.ReadAll(c.Request.Body)
 	if err1 != nil || err2 != nil || length <= 0 || length != len(data) {
 		log.Errorf("data read failed%v\n%v", err1, err2)
 		c.String(http.StatusInternalServerError, "data read failed")
@@ -172,7 +170,7 @@ func saveFile(localFilePath string, data []byte) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(localFilePath, data, 0755); err != nil {
+	if err := os.WriteFile(localFilePath, data, 0755); err != nil {
 		return err
 	}
 	return nil
@@ -196,7 +194,7 @@ func generateHash(file string) error {
 		return err
 	}
 	if stat.IsDir() {
-		dir, err := ioutil.ReadDir(file)
+		dir, err := os.ReadDir(file)
 		if err != nil {
 			return err
 		}
@@ -210,7 +208,7 @@ func generateHash(file string) error {
 	if ext != ".xml" && ext != ".jar" && ext != ".pom" {
 		return nil
 	}
-	bytes, err := ioutil.ReadFile(file)
+	bytes, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -225,39 +223,14 @@ func generateHash(file string) error {
 
 func touchFile(file string, hash string, bytes []byte) error {
 	hashFile := fmt.Sprintf("%s.%s", file, hash)
-	if exist, err := checkFileExist(hashFile); err != nil {
+	if exist, err := CheckFileExist(hashFile); err != nil {
 		return err
 	} else if !exist {
-		if err = ioutil.WriteFile(hashFile, getHash(bytes, hash), 0755); err != nil {
+		if err = os.WriteFile(hashFile, GetHash(bytes, hash), 0755); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func getHash(file []byte, hash string) []byte {
-	switch hash {
-	case "md5":
-		return []byte(fmt.Sprintf("%x", md5.Sum(file)))
-	case "sha1":
-		return []byte(fmt.Sprintf("%x", sha1.Sum(file)))
-	case "sha256":
-		return []byte(fmt.Sprintf("%x", sha256.Sum256(file)))
-	case "sha512":
-		return []byte(fmt.Sprintf("%x", sha512.Sum512(file)))
-	default:
-		return nil
-	}
-}
-
-func checkFileExist(file string) (bool, error) {
-	if _, err := os.Stat(file); err != nil && os.IsNotExist(err) {
-		return false, nil
-	} else if err == nil {
-		return true, nil
-	} else {
-		return false, err
-	}
 }
 
 func closeFile(f http.File) {
@@ -300,4 +273,21 @@ func checkAuth(c *gin.Context) bool {
 		return false
 	}
 	return true
+}
+
+func Cors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		method := c.Request.Method
+		origin := c.Request.Header.Get("Origin")
+		if origin != "" {
+			c.Header("Access-Control-Allow-Origin", "*") // 可将将 * 替换为指定的域名
+			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			c.Header("Access-Control-Allow-Headers", "*")
+			c.Header("Access-Control-Allow-Credentials", "true")
+		}
+		if method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+		}
+		c.Next()
+	}
 }

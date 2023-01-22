@@ -1,6 +1,10 @@
 package util
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"errors"
 	"fmt"
 	"os"
@@ -30,4 +34,29 @@ func CreateFileIfNotExist(file string) error {
 		}
 	}
 	return nil
+}
+
+func CheckFileExist(file string) (bool, error) {
+	if _, err := os.Stat(file); err != nil && os.IsNotExist(err) {
+		return false, nil
+	} else if err == nil {
+		return true, nil
+	} else {
+		return false, err
+	}
+}
+
+func GetHash(file []byte, hash string) []byte {
+	switch hash {
+	case "md5":
+		return []byte(fmt.Sprintf("%x", md5.Sum(file)))
+	case "sha1":
+		return []byte(fmt.Sprintf("%x", sha1.Sum(file)))
+	case "sha256":
+		return []byte(fmt.Sprintf("%x", sha256.Sum256(file)))
+	case "sha512":
+		return []byte(fmt.Sprintf("%x", sha512.Sum512(file)))
+	default:
+		return nil
+	}
 }

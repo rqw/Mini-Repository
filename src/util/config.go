@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/creasty/defaults"
 	"github.com/sirupsen/logrus"
@@ -20,37 +20,6 @@ var (
 var config = &Config{
 	Auth:            make(map[string]interface{}),
 	RepositoryStore: make(map[string]*Repository),
-}
-
-type Config struct {
-	Listen          string        `yaml:"listen" default:"localhost"`
-	Port            string        `yaml:"port" default:"8880"`
-	Context         string        `yaml:"context" default:"repos"`
-	LocalRepository string        `yaml:"localRepository" default:"."`
-	User            []*User       `yaml:"user" default:"[{\"Name\":\"user\",\"Password\":\"password\"}]"`
-	Repository      []*Repository `yaml:"repository" default:"[{\"Id\":\"public\",\"Name\":\"mirror\",\"Mirror\":[\"https://repo1.maven.org/maven2\",\"https://maven.aliyun.com/nexus/content/repositories/public\"]}]"`
-	Logging         *Logging      `yaml:"logging" default:"{\"Path\":\"\",\"Level\":\"debug\"}"`
-	Auth            map[string]interface{}
-	RepositoryStore map[string]*Repository
-}
-
-type User struct {
-	Name     string `yaml:"name"`
-	Password string `yaml:"password"`
-}
-
-type Repository struct {
-	Id     string   `yaml:"id"`
-	Name   string   `yaml:"name"`
-	Target string   `yaml:"target"`
-	Mode   int      `yaml:"mode" default:"4"`
-	Cache  bool     `yaml:"cache" default:"false"`
-	Mirror []string `yaml:"mirror"`
-}
-
-type Logging struct {
-	Path  string       `yaml:"path" default:""`
-	Level logrus.Level `yaml:"level" default:"debug"`
 }
 
 func LoadConfig() *Config {
@@ -71,7 +40,7 @@ func init() {
 
 	log.Infof("configure file: %s", configPath)
 	// 读取配置文件
-	if file, err = ioutil.ReadFile(configPath); err != nil {
+	if file, err = os.ReadFile(configPath); err != nil {
 		log.Errorf("config.yaml read error %v", err)
 	}
 	// 解析yaml
