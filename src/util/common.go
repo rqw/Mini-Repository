@@ -1,16 +1,29 @@
 package util
 
 import (
+	"crypto"
 	"crypto/md5"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
 	"path"
+	"strconv"
+	"strings"
+	"time"
 )
 
+func LoadConfig() *Config {
+	return config
+}
 func CreateParentIfNotExist(file string) error {
 	dirPath := path.Dir(file)
 
@@ -59,4 +72,157 @@ func GetHash(file []byte, hash string) []byte {
 	default:
 		return nil
 	}
+}
+func Md5(data string) string {
+	hash := GetHash([]byte(data), "md5")
+	return string(hash)
+}
+
+// ReleaseToken 签发token，id用户id字段，act用户act字段，expiresTime有效期（单位秒）
+func ReleaseToken(id int, act string, expiresTime int64) string {
+	content := fmt.Sprintf("%d-%s", id, act)
+	headers := make(map[string]string)
+	headers["producer"] = "mini-repos"
+	headers["expires"] = strconv.FormatInt(time.Now().Unix()+expiresTime, 10)
+	head, _ := json.Marshal(headers)
+	a := base64.URLEncoding.EncodeToString(head)
+	b := base64.URLEncoding.EncodeToString([]byte(content))
+	c, _ := RsaSign([]byte(fmt.Sprintf("%s.%s", a, b)))
+	return fmt.Sprintf("%s.%s.%s", a, b, c)
+}
+
+// ValidToken 验证并返回token,返回是否验证成功、id、act字段
+func ValidToken(token string) (bool, int, string) {
+	data := strings.Split(token, ".")
+	if len(data) != 3 {
+		return false, 0, ""
+	}
+	a := data[0]
+	b := data[1]
+	c := data[2]
+	err := RsaVerify([]byte(fmt.Sprintf("%s.%s", a, b)), c)
+	if err != nil {
+		return false, 0, ""
+	}
+	h64, _ := base64.URLEncoding.DecodeString(a)
+	headers := make(map[string]string)
+	json.Unmarshal(h64, &headers)
+	expires, _ := strconv.ParseInt(headers["expires"], 10, 64)
+	if expires < time.Now().Unix() {
+		return false, 0, ""
+	}
+	b64, _ := base64.URLEncoding.DecodeString(b)
+	body := strings.Split(string(b64), "-")
+	if len(body) != 2 {
+		return false, 0, ""
+	}
+	id, _ := strconv.Atoi(body[0])
+	return true, id, body[1]
+}
+
+func RsaVerify(data []byte, base64Sig string) error {
+	bytes, err := base64.URLEncoding.DecodeString(base64Sig)
+	if err != nil {
+		return err
+	}
+	hashInstance := crypto.MD5.New()
+	hashInstance.Write(data)
+	hashed := hashInstance.Sum(nil)
+	return rsa.VerifyPKCS1v15(&PublicKey, crypto.MD5, hashed, bytes)
+}
+func RsaSign(data []byte) (string, error) {
+	hashInstance := crypto.MD5.New()
+	hashInstance.Write(data)
+	hashed := hashInstance.Sum(nil)
+	bytes, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.MD5, hashed)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+func rsaGenerate(bits int) (*rsa.PrivateKey, rsa.PublicKey) {
+	var privateKey *rsa.PrivateKey
+	var publicKey rsa.PublicKey
+	if exist, _ := CheckFileExist(KeyDir + "/privateKey.pem"); !exist {
+		privateKey = createRsaPrivateKeyFile(bits)
+		publicKey = createRsaPublicKeyFile(privateKey)
+	} else {
+		privateKey = readRsaPrivateKey()
+		if exist, _ := CheckFileExist(KeyDir + "/publicKey.pem"); !exist {
+			publicKey = createRsaPublicKeyFile(privateKey)
+		} else {
+			publicKey = *readRsaPublicKey()
+		}
+	}
+	return privateKey, publicKey
+
+}
+func createRsaPrivateKeyFile(bits int) *rsa.PrivateKey {
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		log.Fatal(err)
+	}
+	x509privateKey := x509.MarshalPKCS1PrivateKey(privateKey)
+	privateKeyFile, err := os.Create(KeyDir + "/privateKey.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer privateKeyFile.Close()
+	privateKeyBlock := pem.Block{
+		Type:    "RSA Private Key",
+		Headers: nil,
+		Bytes:   x509privateKey,
+	}
+	pem.Encode(privateKeyFile, &privateKeyBlock)
+	return privateKey
+}
+func createRsaPublicKeyFile(privateKey *rsa.PrivateKey) rsa.PublicKey {
+	publicKey := privateKey.PublicKey
+	x509publickey, _ := x509.MarshalPKIXPublicKey(&publicKey)
+	publicKeyfile, err := os.Create(KeyDir + "/publicKey.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer publicKeyfile.Close()
+	publicKeyBlock := pem.Block{
+		Type:    "RSA Public Key",
+		Headers: nil,
+		Bytes:   x509publickey,
+	}
+	pem.Encode(publicKeyfile, &publicKeyBlock)
+	return publicKey
+}
+func readRsaPublicKey() *rsa.PublicKey {
+	file, err := os.Open(KeyDir + "/publicKey.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	fileInfo, _ := file.Stat()
+	buf := make([]byte, fileInfo.Size())
+	file.Read(buf)
+	block, _ := pem.Decode(buf)
+	pki, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return pki.(*rsa.PublicKey)
+}
+func readRsaPrivateKey() *rsa.PrivateKey {
+	file, err := os.Open(KeyDir + "/privateKey.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	info, _ := file.Stat()
+	buf := make([]byte, info.Size())
+	file.Read(buf)
+	//pem decode
+	block, _ := pem.Decode(buf)
+	//X509 decode
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return privateKey
 }

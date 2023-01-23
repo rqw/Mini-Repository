@@ -5,55 +5,56 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"strconv"
+	"time"
 )
 
 var (
-	UserCache      map[int]*User
+	cache          map[int]*User
 	LoginNameCache map[string]*User
-	UserList       []*User
-	MaxId          = 0
+	list           []*User
+	maxId          = 0
 	log            = util.Log
 	config         = util.LoadConfig()
 	dataPath       = path.Join(config.DataDir, "user.json")
 )
 
-func init() {
-	UserList = loadFile()
-	UserCache = make(map[int]*User, len(UserList))
-	LoginNameCache = make(map[string]*User, len(UserList))
-	for _, user := range UserList {
-		UserCache[user.ID] = user
-		LoginNameCache[user.LoginName] = user
-		if user.ID > MaxId {
-			MaxId = user.ID
-		}
-	}
+func FindUserInfoById(id int) User {
+	user, _ := cache[id]
+	return *user
 }
-func findUserInfoById(id int) User {
-	return *UserCache[id]
+
+func _FindUserInfoById(id int) any {
+	return FindUserInfoById(id)
 }
 func findAllUser() []*User {
-	return UserList
+	return list
 }
-func validaUser(user User) bool {
+func validaUser(user *User) bool {
 	if localUser, state := LoginNameCache[user.LoginName]; state {
-		return localUser.Password == user.Password
+		if localUser.Password == user.Password {
+			t, _ := json.Marshal(localUser)
+			json.Unmarshal(t, &user)
+			user.Password = ""
+			user.JwtToken = util.ReleaseToken(user.ID, user.Act, 12*60*60)
+			return true
+		}
 	}
 	return false
 }
 func delUserById(id int) {
-	user := UserCache[id]
+	user := cache[id]
 	delete(LoginNameCache, user.LoginName)
-	delete(UserCache, id)
+	delete(cache, id)
 	var index int
-	for i, u := range UserList {
+	for i, u := range list {
 		if user.ID == u.ID {
 			index = i
 			break
 		}
 	}
-	UserList = append(UserList[:index], UserList[index+1:]...)
-	saveToFile(UserList)
+	list = append(list[:index], list[index+1:]...)
+	saveToFile(list)
 }
 func addUser(user *User) string {
 	if _, state := LoginNameCache[user.LoginName]; !state {
@@ -62,12 +63,13 @@ func addUser(user *User) string {
 	if user.Password == "" {
 		return util.MsgCodeUserPwdNotEmpty
 	}
-	user.ID = MaxId + 1
-	MaxId++
-	UserCache[user.ID] = user
+	user.ID = maxId + 1
+	user.Act = util.Md5(strconv.FormatInt(time.Now().UnixNano(), 10))
+	maxId++
+	cache[user.ID] = user
 	LoginNameCache[user.LoginName] = user
-	UserList[len(UserList)] = user
-	saveToFile(UserList)
+	list[len(list)] = user
+	saveToFile(list)
 	return util.MsgCodeSuccess
 }
 func saveToFile(list []*User) {
@@ -86,7 +88,7 @@ func saveToFile(list []*User) {
 
 }
 func defaultUser() []*User {
-	admin := User{ID: 1, LoginName: "admin", Password: string(util.GetHash([]byte("admin"), "md5")), Fullname: "admin", PermissionList: []int{0}}
+	admin := User{ID: 1, LoginName: "admin", Password: util.Md5("admin"), Fullname: "admin", PermissionList: []int{0}, Act: util.Md5(strconv.FormatInt(time.Now().UnixNano(), 10))}
 	return []*User{&admin}
 }
 func loadFile() []*User {

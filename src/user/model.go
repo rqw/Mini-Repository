@@ -5,7 +5,7 @@ type User struct {
 	LoginName      string `json:"loginName"`
 	Fullname       string `json:"fullname"`
 	Password       string `json:"password"`
-	Token          string `json:"token"`
+	Act            string `json:"act"`
 	PermissionList []int  `json:"permissionList"`
 	JwtToken       string `json:"jwtToken"`
 }

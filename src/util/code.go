@@ -6,4 +6,5 @@ const (
 	MsgCodeUserExists      = "USER-EXISTS"
 	MsgCodeUserPwdNotEmpty = "USER-PASSWORD-NOT-EMPTY"
 	MsgCodeUserValidFail   = "USER-VALID-FAIL"
+	MsgCodeTokenValidFail  = "TOKEN-VALID-FAIL"
 )

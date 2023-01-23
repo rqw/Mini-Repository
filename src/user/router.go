@@ -17,7 +17,7 @@ func RouterRegister() {
 }
 func _login(c *gin.Context) {
 	if user, err := _getParamUser(c); err == nil {
-		if validaUser(user) {
+		if validaUser(&user) {
 			c.JSON(http.StatusOK, util.SUCCESS(user))
 			return
 		}
@@ -26,7 +26,14 @@ func _login(c *gin.Context) {
 }
 func _getUserInfoById(c *gin.Context) {
 	if id, err := _getParamId(c); err == nil {
-		user := findUserInfoById(id)
+		if id == 0 {
+			o, _ := c.Get("current")
+			user := o.(User)
+			user.Password = ""
+			c.JSON(http.StatusOK, util.SUCCESS(user))
+			return
+		}
+		user := FindUserInfoById(id)
 		c.JSON(http.StatusOK, util.SUCCESS(user))
 	}
 }

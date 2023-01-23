@@ -4,35 +4,25 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 	"io"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
-
-	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
 )
 
 var (
-	Engine     *gin.Engine
-	fs         http.FileSystem
-	fileServer http.Handler
-	client     = resty.New()
-	Static     embed.FS
+	Engine           *gin.Engine
+	fs               http.FileSystem
+	fileServer       http.Handler
+	client           = resty.New()
+	Static           embed.FS
+	FindUserInfoById func(id int) any
 )
 
-func init() {
-	fs = http.Dir(config.LocalRepository)
-	fileServer = http.StripPrefix(path.Join("/", config.Context), http.FileServer(fs))
-
-	gin.SetMode(gin.ReleaseMode)
-	Engine = gin.Default()
-	Engine.Use(GinLogger())
-	//Engine.Use(Cors())
-
-}
 func RouterRegister() {
 	// Engine.StaticFS("/vue", http.FS(Static))
 	Engine.Any("/ui/*filepath", staticFs)
@@ -275,19 +265,29 @@ func checkAuth(c *gin.Context) bool {
 	return true
 }
 
-func Cors() gin.HandlerFunc {
+func jwtToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		method := c.Request.Method
-		origin := c.Request.Header.Get("Origin")
-		if origin != "" {
-			c.Header("Access-Control-Allow-Origin", "*") // 可将将 * 替换为指定的域名
-			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-			c.Header("Access-Control-Allow-Headers", "*")
-			c.Header("Access-Control-Allow-Credentials", "true")
+		curl := c.Request.RequestURI
+		if authExcludeRegexp.MatchString(curl) {
+			c.Next()
+		} else {
+			token := c.Request.Header.Get("Authorization")
+			if token != "" {
+				state, id, act := ValidToken(token)
+				log.Infof("state:%s id:%s act:%s", state, id, act)
+				if state {
+					currentUser := FindUserInfoById(id)
+					c.Set("id", id)
+					c.Set("act", act)
+					c.Set("current", currentUser)
+					c.Next()
+					return
+				}
+			}
+			c.JSON(http.StatusOK, FAIL(MsgCodeTokenValidFail, nil))
+			c.Abort()
+
 		}
-		if method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-		}
-		c.Next()
+
 	}
 }
