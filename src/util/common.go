@@ -14,6 +14,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"net/http"
 	"os"
 	"path"
 	"strconv"
@@ -23,6 +25,12 @@ import (
 
 func LoadConfig() *Config {
 	return config
+}
+func GetFileSystem() http.FileSystem {
+	return fs
+}
+func GetFileServer() http.Handler {
+	return fileServer
 }
 func CreateParentIfNotExist(file string) error {
 	dirPath := path.Dir(file)
@@ -73,9 +81,84 @@ func GetHash(file []byte, hash string) []byte {
 		return nil
 	}
 }
+func touchFile(file string, hash string, bytes []byte) error {
+	hashFile := fmt.Sprintf("%s.%s", file, hash)
+	if exist, err := CheckFileExist(hashFile); err != nil {
+		return err
+	} else if !exist {
+		if err = os.WriteFile(hashFile, GetHash(bytes, hash), 0755); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func GenerateHash(file string) error {
+	stat, err := os.Stat(file)
+	if err != nil {
+		return err
+	}
+	if stat.IsDir() {
+		dir, err := os.ReadDir(file)
+		if err != nil {
+			return err
+		}
+		for _, info := range dir {
+			if err = GenerateHash(info.Name()); err != nil {
+				return err
+			}
+		}
+	}
+	ext := path.Ext(file)
+	if ext != ".xml" && ext != ".jar" && ext != ".pom" {
+		return nil
+	}
+	bytes, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	if err = touchFile(file, "md5", bytes); err != nil {
+		return err
+	}
+	if err = touchFile(file, "sha1", bytes); err != nil {
+		return err
+	}
+	return nil
+}
 func Md5(data string) string {
 	hash := GetHash([]byte(data), "md5")
 	return string(hash)
+}
+func JsonFileToAny(file string, target any) error {
+	data, err := os.ReadFile(file)
+	if err == nil {
+		err = json.Unmarshal(data, &target)
+	}
+	return err
+}
+func AnyToJsonFile(target any, file string) error {
+	content, err := json.Marshal(target)
+	if err != nil {
+		return err
+	}
+	if isExists, _ := CheckFileExist(config.DataDir); !isExists {
+		os.MkdirAll(config.DataDir, os.ModePerm)
+	}
+	return os.WriteFile(file, content, os.ModePerm)
+}
+func GetParamId(c *gin.Context) (int, error) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusOK, FAIL(err.Error(), nil))
+	}
+	return id, err
+}
+func GetParamJson[T any](c *gin.Context) (T, error) {
+	var t T
+	err := c.ShouldBindJSON(&t)
+	if err != nil {
+		c.JSON(http.StatusOK, FAIL(err.Error(), nil))
+	}
+	return t, err
 }
 
 // ReleaseToken 签发token，id用户id字段，act用户act字段，expiresTime有效期（单位秒）

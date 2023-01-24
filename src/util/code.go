@@ -7,4 +7,6 @@ const (
 	MsgCodeUserPwdNotEmpty = "USER-PASSWORD-NOT-EMPTY"
 	MsgCodeUserValidFail   = "USER-VALID-FAIL"
 	MsgCodeTokenValidFail  = "TOKEN-VALID-FAIL"
+	MsgCodeAuthFail        = "TOKEN-AUTH-FAIL"
+	MsgCodeReposExists     = "REPOS-EXISTS"
 )

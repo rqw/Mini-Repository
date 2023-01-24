@@ -2,10 +2,8 @@ package user
 
 import (
 	"Mini-Repository/src/util"
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func RouterRegister() {
@@ -16,7 +14,7 @@ func RouterRegister() {
 	util.Engine.POST("/user/login", _login)
 }
 func _login(c *gin.Context) {
-	if user, err := _getParamUser(c); err == nil {
+	if user, err := util.GetParamJson[User](c); err == nil {
 		if validaUser(&user) {
 			c.JSON(http.StatusOK, util.SUCCESS(user))
 			return
@@ -25,7 +23,7 @@ func _login(c *gin.Context) {
 	}
 }
 func _getUserInfoById(c *gin.Context) {
-	if id, err := _getParamId(c); err == nil {
+	if id, err := util.GetParamId(c); err == nil {
 		if id == 0 {
 			o, _ := c.Get("current")
 			user := o.(User)
@@ -38,14 +36,14 @@ func _getUserInfoById(c *gin.Context) {
 	}
 }
 func _dropUserById(c *gin.Context) {
-	if id, err := _getParamId(c); err == nil {
+	if id, err := util.GetParamId(c); err == nil {
 		delUserById(id)
 		c.JSON(http.StatusOK, util.SUCCESS(nil))
 	}
 }
 
 func _addUserInfo(c *gin.Context) {
-	if user, err := _getParamUser(c); err == nil {
+	if user, err := util.GetParamJson[User](c); err == nil {
 		code := addUser(&user)
 		if code == util.MsgCodeSuccess {
 			c.JSON(http.StatusOK, util.SUCCESS(nil))
@@ -56,20 +54,5 @@ func _addUserInfo(c *gin.Context) {
 }
 
 func _queryUser(c *gin.Context) {
-	c.JSON(http.StatusOK, util.SUCCESS(findAllUser()))
-}
-func _getParamUser(c *gin.Context) (User, error) {
-	var user User
-	err := c.BindJSON(&user)
-	if err != nil {
-		c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
-	}
-	return user, err
-}
-func _getParamId(c *gin.Context) (int, error) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
-	}
-	return id, err
+	c.JSON(http.StatusOK, util.SUCCESS(list))
 }

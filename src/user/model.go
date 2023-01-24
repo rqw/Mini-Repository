@@ -6,11 +6,7 @@ type User struct {
 	Fullname       string `json:"fullname"`
 	Password       string `json:"password"`
 	Act            string `json:"act"`
-	PermissionList []int  `json:"permissionList"`
 	JwtToken       string `json:"jwtToken"`
-}
-type Permission struct {
-	ID         int    `json:"id"`
-	Type       int    `json:"type"`
-	ValidRegex string `json:"validRegex"`
+	Mrt            string `json:"mrt"`
+	PermissionList []int  `json:"permissionList"`
 }

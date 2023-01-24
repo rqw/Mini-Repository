@@ -2,11 +2,12 @@ package util
 
 import (
 	"crypto/rsa"
-	"encoding/base64"
+	"embed"
 	"flag"
 	"fmt"
 	"github.com/creasty/defaults"
 	"github.com/gin-gonic/gin"
+	"github.com/go-resty/resty/v2"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"net/http"
@@ -29,6 +30,12 @@ var (
 		RepositoryStore: make(map[string]*Repository),
 	}
 	authExcludeRegexp *regexp.Regexp
+	Engine            *gin.Engine
+	fs                http.FileSystem
+	fileServer        http.Handler
+	client            = resty.New()
+	Static            embed.FS
+	AuthHandler       func(c *gin.Context) bool
 )
 
 func init() {
@@ -67,25 +74,6 @@ func init() {
 	log.Infof("auth exclude regexp: %s", authExcludeRegexp)
 	// rsa公钥私钥处理
 	privateKey, PublicKey = rsaGenerate(1024)
-	// 预处理认证信息
-	for _, user := range config.User {
-		base := fmt.Sprintf("%s:%s", user.Name, user.Password)
-		auth := base64.StdEncoding.EncodeToString([]byte(base))
-		config.Auth[auth] = auth
-	}
-	// 预处理存储库
-	for _, repository := range config.Repository {
-		// 移除未启用的repository
-		if repository.Mode == 0 {
-			continue
-		}
-		// 如果没设置目标目录, 则默认使用Id
-		if repository.Target == "" {
-			repository.Target = repository.Id
-		}
-		config.RepositoryStore[repository.Id] = repository
-		log.Infof("repository: http://%s:%s/%s/repos/%s local dirname: %s", config.Listen, config.Port, config.Context, repository.Id, repository.Target)
-	}
 	//处理路由信息
 	fs = http.Dir(config.LocalRepository)
 	fileServer = http.StripPrefix(path.Join("/", config.Context), http.FileServer(fs))

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Mini-Repository/src/repository"
 	"Mini-Repository/src/user"
 	"Mini-Repository/src/util"
 	"embed"
@@ -18,6 +19,7 @@ func main() {
 	util.Static = Static
 	util.RouterRegister()
 	user.RouterRegister()
+	repository.RouterRegister()
 	if bytes, err := json.Marshal(config); err == nil {
 		log.Debugf("启动参数: %s", bytes)
 	} else {

@@ -5,7 +5,7 @@ NAME = mini-repository
 
 build: clean
 	go mod tidy
-	go build -o MiniRepos src/main.go
+	go build -o bin/MiniRepos src/main.go
 	chmod a+x MiniRepos
 run: build
 	./MiniRepos
