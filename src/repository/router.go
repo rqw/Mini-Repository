@@ -14,9 +14,11 @@ import (
 func RouterRegister() {
 	util.Engine.GET("/repository/:id", _getRepository)
 	util.Engine.DELETE("/repository/:id", _dropRepository)
-	util.Engine.PUT("/repository", _addRepository)
+	util.Engine.PUT("/repository", _saveRepository)
 	util.Engine.POST("/repository", _queryRepository)
-	util.Engine.POST("/repository/view", _viewRepository)
+	util.Engine.POST("/repository/view/:libName", _viewRepository)
+	util.Engine.POST("/repository/del/:libName", _deleteRepository)
+	util.Engine.POST("/repository/upload/:libName", _uploadRepository)
 	util.Engine.PUT("/:context/:libName/*filePath", put)
 	util.Engine.GET("/:context/:libName/*filePath", get)
 	util.Engine.HEAD("/:context/:libName/*filePath", get)
@@ -33,9 +35,9 @@ func _dropRepository(c *gin.Context) {
 		c.JSON(http.StatusOK, util.SUCCESS(nil))
 	}
 }
-func _addRepository(c *gin.Context) {
+func _saveRepository(c *gin.Context) {
 	if repos, err := util.GetParamJson[Repository](c); err == nil {
-		code := AddRepository(&repos)
+		code := SaveRepository(&repos)
 		if code == util.MsgCodeSuccess {
 			c.JSON(http.StatusOK, util.SUCCESS(nil))
 		} else {
@@ -49,6 +51,13 @@ func _queryRepository(c *gin.Context) {
 func _viewRepository(c *gin.Context) {
 	// todo: implement
 }
+func _deleteRepository(c *gin.Context) {
+	// todo: implement
+}
+func _uploadRepository(c *gin.Context) {
+	// todo: implement
+}
+
 func get(c *gin.Context) {
 	repository, err := checkAndGetRepository(c)
 	if err != nil {
@@ -98,7 +107,7 @@ func get(c *gin.Context) {
 	}
 
 	if generate := c.Query("generate_md5_sha1"); strings.EqualFold(generate, "true") {
-		if !checkAuth(c) {
+		if !checkAuthPublish(c) {
 			c.String(http.StatusUnauthorized, "Unauthorised")
 			return
 		}
@@ -116,7 +125,7 @@ func get(c *gin.Context) {
 }
 
 func put(c *gin.Context) {
-	if !checkAuth(c) {
+	if !checkAuthPublish(c) {
 		c.String(http.StatusUnauthorized, "Unauthorised")
 		return
 	}

@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"Mini-Repository/src/user"
 	"Mini-Repository/src/util"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -62,15 +64,23 @@ func saveFile(localFilePath string, data []byte) error {
 	return nil
 }
 
-func checkAuth(c *gin.Context) bool {
+func checkAuthPublish(c *gin.Context) bool {
+	libName := c.Param("libName")
+
 	authorization := c.GetHeader("Authorization")
 	if !strings.HasPrefix(authorization, "Basic ") {
 		return false
 	}
 	// 校验用户
 	authorization = strings.TrimSpace(authorization[6:])
-	if config.Auth[authorization] == nil {
-		return false
+	if data, err := base64.StdEncoding.DecodeString(authorization); err == nil {
+		str := string(data)
+		infos := strings.Split(str, ":")
+		if len(infos) == 2 {
+			return user.AuthRepos(infos[0], infos[1], libName)
+		}
+
 	}
-	return true
+
+	return false
 }

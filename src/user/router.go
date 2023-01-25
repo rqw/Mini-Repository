@@ -9,7 +9,7 @@ import (
 func RouterRegister() {
 	util.Engine.GET("/user/:id", _getUserInfoById)
 	util.Engine.DELETE("/user/:id", _dropUserById)
-	util.Engine.PUT("/user", _addUserInfo)
+	util.Engine.PUT("/user", _saveUserInfo)
 	util.Engine.POST("/user", _queryUser)
 	util.Engine.POST("/user/login", _login)
 }
@@ -42,11 +42,11 @@ func _dropUserById(c *gin.Context) {
 	}
 }
 
-func _addUserInfo(c *gin.Context) {
+func _saveUserInfo(c *gin.Context) {
 	if user, err := util.GetParamJson[User](c); err == nil {
-		code := addUser(&user)
+		code := saveUser(&user)
 		if code == util.MsgCodeSuccess {
-			c.JSON(http.StatusOK, util.SUCCESS(nil))
+			c.JSON(http.StatusOK, util.SUCCESS(user))
 		} else {
 			c.JSON(http.StatusOK, util.FAIL(code, nil))
 		}

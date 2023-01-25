@@ -17,6 +17,16 @@ func AddPermission(perm *Permission) {
 	list = append(list, perm)
 	saveToFile(PermissionCache{MaxId: maxId, PermissionList: list})
 }
+func AddPermissionList(permList []*Permission) {
+	for _, perm := range permList {
+		perm.ID = maxId + 1
+		maxId++
+		cache[perm.ID] = perm
+		list = append(list, perm)
+	}
+	saveToFile(PermissionCache{MaxId: maxId, PermissionList: list})
+}
+
 func DelPermission(name string) {
 	var index int
 	for i, u := range list {
@@ -27,6 +37,21 @@ func DelPermission(name string) {
 		}
 	}
 	list = append(list[:index], list[index+1:]...)
+	saveToFile(PermissionCache{MaxId: maxId, PermissionList: list})
+}
+
+func DelPermissionList(nameList []string) {
+	for _, name := range nameList {
+		var index int
+		for i, u := range list {
+			if name == u.Name {
+				index = i
+				delete(cache, u.ID)
+				break
+			}
+		}
+		list = append(list[:index], list[index+1:]...)
+	}
 	saveToFile(PermissionCache{MaxId: maxId, PermissionList: list})
 }
 func CompileToRegexp(ids []int) *regexp.Regexp {
@@ -41,9 +66,9 @@ func CompileToRegexp(ids []int) *regexp.Regexp {
 }
 
 func defaultUser() PermissionCache {
-	p1 := Permission{ID: 1, Name: "用户维护", Type: 1, Description: "管理系统用户维护的权限，谨慎授予", ValidRegex: "(.*@/user(/[^/]+)?)|(POST@/permission)"}
-	p2 := Permission{ID: 2, Name: "仓库维护", Type: 1, Description: "仓库信息维护的权限，谨慎授予", ValidRegex: ".*@/repository(/[^/]+)?"}
-	p3 := Permission{ID: 3, Name: "浏览仓库", Type: 1, Description: "仓库浏览权限，可以查看仓库内容", ValidRegex: "POST@/repository(/[^/]+)?"}
+	p1 := Permission{ID: 1, Name: "用户维护", Type: TypeMenu, Description: "管理系统用户维护的权限，谨慎授予", ValidRegex: "(.*@/user(/[^/]+)?)|(POST@/permission)"}
+	p2 := Permission{ID: 2, Name: "仓库维护", Type: TypeMenu, Description: "仓库信息维护的权限，谨慎授予", ValidRegex: ".*@/repository(/[^/]+)?"}
+	p3 := Permission{ID: 3, Name: "浏览仓库", Type: TypeMenu, Description: "仓库浏览权限，可以查看仓库内容", ValidRegex: "POST@/repository(/[^/]+)?"}
 
 	return PermissionCache{MaxId: 3, PermissionList: []*Permission{&p1, &p2, &p3}}
 }

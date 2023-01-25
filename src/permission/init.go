@@ -14,6 +14,12 @@ var (
 	dataPath = path.Join(config.DataDir, "permission.json")
 )
 
+const (
+	TypeMenu   = 1
+	TypeRepos  = 2
+	TypeButton = 3
+)
+
 func init() {
 	t := loadFile()
 	maxId = t.MaxId
