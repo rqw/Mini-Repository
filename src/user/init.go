@@ -13,12 +13,11 @@ var (
 	cache          map[int]*User
 	LoginNameCache map[string]*User
 	userAuthCache  map[int]*regexp.Regexp
-
-	list     []*User
-	maxId    = 0
-	log      = util.Log
-	config   = util.LoadConfig()
-	dataPath = path.Join(config.DataDir, "user.json")
+	list           []*User
+	maxId          = 0
+	log            = util.Log
+	config         = util.LoadConfig()
+	dataPath       = path.Join(config.DataDir, "user.json")
 )
 
 func init() {

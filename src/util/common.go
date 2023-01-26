@@ -243,12 +243,12 @@ func rsaGenerate(bits int) (*rsa.PrivateKey, rsa.PublicKey) {
 func createRsaPrivateKeyFile(bits int) *rsa.PrivateKey {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	x509privateKey := x509.MarshalPKCS1PrivateKey(privateKey)
 	privateKeyFile, err := os.Create(KeyDir + "/privateKey.pem")
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	defer privateKeyFile.Close()
 	privateKeyBlock := pem.Block{
@@ -264,7 +264,7 @@ func createRsaPublicKeyFile(privateKey *rsa.PrivateKey) rsa.PublicKey {
 	x509publickey, _ := x509.MarshalPKIXPublicKey(&publicKey)
 	publicKeyfile, err := os.Create(KeyDir + "/publicKey.pem")
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	defer publicKeyfile.Close()
 	publicKeyBlock := pem.Block{
@@ -278,7 +278,7 @@ func createRsaPublicKeyFile(privateKey *rsa.PrivateKey) rsa.PublicKey {
 func readRsaPublicKey() *rsa.PublicKey {
 	file, err := os.Open(KeyDir + "/publicKey.pem")
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	defer file.Close()
 	fileInfo, _ := file.Stat()
@@ -287,14 +287,14 @@ func readRsaPublicKey() *rsa.PublicKey {
 	block, _ := pem.Decode(buf)
 	pki, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	return pki.(*rsa.PublicKey)
 }
 func readRsaPrivateKey() *rsa.PrivateKey {
 	file, err := os.Open(KeyDir + "/privateKey.pem")
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	defer file.Close()
 	info, _ := file.Stat()
@@ -305,7 +305,7 @@ func readRsaPrivateKey() *rsa.PrivateKey {
 	//X509 decode
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		log.Fatal(err)
+		Log.Fatal(err)
 	}
 	return privateKey
 }

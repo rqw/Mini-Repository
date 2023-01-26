@@ -9,4 +9,10 @@ type User struct {
 	JwtToken       string `json:"jwtToken"`
 	Mrt            string `json:"mrt"`
 	PermissionList []int  `json:"permissionList"`
+	Roles          []Role `json:"roles"`
+}
+
+type Role struct {
+	RoleName string `json:"roleName"`
+	Value    string `json:"value"`
 }

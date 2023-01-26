@@ -1,6 +1,7 @@
 package user
 
 import (
+	"Mini-Repository/src/permission"
 	"Mini-Repository/src/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -28,6 +29,15 @@ func _getUserInfoById(c *gin.Context) {
 			o, _ := c.Get("current")
 			user := o.(User)
 			user.Password = ""
+			permList := permission.GetPermissionList(user.PermissionList)
+			roleList := make([]Role, len(permList))
+			for i, perm := range permList {
+				roleList[i] = Role{
+					Value:    perm.Name,
+					RoleName: perm.Name,
+				}
+			}
+			user.Roles = roleList
 			c.JSON(http.StatusOK, util.SUCCESS(user))
 			return
 		}

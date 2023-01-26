@@ -73,7 +73,7 @@ func defaultPermission() []*User {
 	return []*User{&admin}
 }
 func saveToFile(list []*User) {
-	if err := util.AnyToJsonFile(list, config.DataDir); err != nil {
+	if err := util.AnyToJsonFile(list, dataPath); err != nil {
 		log.Errorf("saveToFile user.json fail.%v", err)
 	}
 }
