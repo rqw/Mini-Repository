@@ -41,6 +41,18 @@ type Resp struct {
 	Message string      `json:"message"`
 	Result  interface{} `json:"result"`
 }
+type Page[T any] struct {
+	No        int               `json:"no"`
+	Total     int               `json:"total"`
+	Condition map[string]string `json:"condition"`
+	Orders    []string          `json:"orders"`
+	Capacity  int               `json:"capacity"`
+	DataList  []T               `json:"dataList"`
+}
+
+func (page Page[any]) GetFirst() int {
+	return (page.No - 1) * page.Capacity
+}
 
 func SUCCESS(data interface{}) Resp {
 	return Resp{Code: 0, Result: data}

@@ -5,11 +5,6 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"github.com/creasty/defaults"
-	"github.com/gin-gonic/gin"
-	"github.com/go-resty/resty/v2"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 	"io"
 	"net/http"
 	"os"
@@ -18,6 +13,11 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/creasty/defaults"
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -35,7 +35,6 @@ var (
 	Engine            *gin.Engine
 	fs                http.FileSystem
 	fileServer        http.Handler
-	client            = resty.New()
 	Static            embed.FS
 	AuthHandler       func(c *gin.Context) bool
 )

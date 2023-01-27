@@ -12,15 +12,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func LoadConfig() *Config {
@@ -40,7 +40,7 @@ func CreateParentIfNotExist(file string) error {
 			return err
 		}
 	} else if !stat.IsDir() {
-		return errors.New(fmt.Sprintf("%s is not a dir\n", dirPath))
+		return fmt.Errorf("%s is not a dir", dirPath)
 	}
 	return nil
 }

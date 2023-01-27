@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -39,6 +40,53 @@ func delUserById(id int) {
 	auth := base64.StdEncoding.EncodeToString([]byte(base))
 	delete(config.Auth, auth)
 	saveToFile(list)
+}
+func queryList(page *util.Page[*User]) error {
+	tmpList := make([]*User, page.Capacity)
+	var filters []func(arg User) bool
+	if page.Condition != nil {
+		filters = make([]func(arg User) bool, len(page.Condition))
+		if fullname, ok := page.Condition["fullname"]; ok {
+			filters = append(filters, func(arg User) bool { return strings.Contains(arg.Fullname, fullname) })
+		}
+		if loginName, ok := page.Condition["loginName"]; ok {
+			filters = append(filters, func(arg User) bool { return strings.Contains(arg.Fullname, loginName) })
+		}
+	}
+	current := 0
+	index := 0
+	first := page.GetFirst()
+	last := page.Capacity - 1
+	if filters == nil {
+		tmpList = list[first : first+page.Capacity]
+	} else {
+		for _, u := range list {
+			if matchUser(*u, filters) {
+				if current >= first {
+					tmpList[index] = u
+					if index == last {
+						break
+					}
+					index++
+				}
+				current++
+			}
+		}
+	}
+	page.DataList = tmpList
+	return nil
+}
+func matchUser(user User, filters []func(arg User) bool) bool {
+	cnt := len(filters)
+	if cnt > 0 {
+		for i := 0; i < cnt; i++ {
+			if filters[i](user) {
+				return true
+			}
+		}
+		return false
+	}
+	return true
 }
 func saveUser(user *User) string {
 	if _, state := LoginNameCache[user.LoginName]; !state {

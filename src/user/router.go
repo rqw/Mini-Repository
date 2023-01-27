@@ -3,8 +3,9 @@ package user
 import (
 	"Mini-Repository/src/permission"
 	"Mini-Repository/src/util"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RouterRegister() {
@@ -64,5 +65,10 @@ func _saveUserInfo(c *gin.Context) {
 }
 
 func _queryUser(c *gin.Context) {
-	c.JSON(http.StatusOK, util.SUCCESS(list))
+	if page, err := util.GetParamJson[util.Page[*User]](c); err == nil {
+		if err := queryList(&page); err != nil {
+			c.JSON(http.StatusOK, util.SUCCESS(page))
+		}
+		c.JSON(http.StatusOK, util.FAIL(util.MsgCodeFail, err))
+	}
 }
