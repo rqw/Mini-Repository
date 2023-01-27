@@ -66,8 +66,9 @@ func _saveUserInfo(c *gin.Context) {
 
 func _queryUser(c *gin.Context) {
 	if page, err := util.GetParamJson[util.Page[*User]](c); err == nil {
-		if err := queryList(&page); err != nil {
+		if err := queryList(&page); err == nil {
 			c.JSON(http.StatusOK, util.SUCCESS(page))
+			return
 		}
 		c.JSON(http.StatusOK, util.FAIL(util.MsgCodeFail, err))
 	}

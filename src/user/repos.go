@@ -42,7 +42,7 @@ func delUserById(id int) {
 	saveToFile(list)
 }
 func queryList(page *util.Page[*User]) error {
-	tmpList := make([]*User, page.Capacity)
+	tmpList := make([]*User, 0)
 	var filters []func(arg User) bool
 	if page.Condition != nil {
 		filters = make([]func(arg User) bool, len(page.Condition))
@@ -57,23 +57,17 @@ func queryList(page *util.Page[*User]) error {
 	index := 0
 	first := page.GetFirst()
 	last := page.Capacity - 1
-	if filters == nil {
-		tmpList = list[first : first+page.Capacity]
-	} else {
-		for _, u := range list {
-			if matchUser(*u, filters) {
-				if current >= first {
-					tmpList[index] = u
-					if index == last {
-						break
-					}
-					index++
-				}
-				current++
+	for _, u := range list {
+		if matchUser(*u, filters) {
+			if current >= first && index <= last {
+				tmpList = append(tmpList, u)
+				index++
 			}
+			current++
 		}
 	}
 	page.DataList = tmpList
+	page.Total = current
 	return nil
 }
 func matchUser(user User, filters []func(arg User) bool) bool {
@@ -116,7 +110,7 @@ func saveUser(user *User) string {
 }
 
 func defaultPermission() []*User {
-	admin := User{ID: 1, LoginName: "admin", Password: util.Md5("admin"), Fullname: "admin", PermissionList: []int{1, 2, 3}, Act: util.Md5(strconv.FormatInt(time.Now().UnixNano(), 10))}
+	admin := User{ID: 1, LoginName: "admin", Password: util.Md5("admin"), Fullname: "系统管理员", PermissionList: []int{1, 2, 3}, Act: util.Md5(strconv.FormatInt(time.Now().UnixNano(), 10))}
 	admin.Mrt = util.Md5(fmt.Sprintf("%d-%s-%s-%d", admin.ID, admin.LoginName, admin.Password, time.Now().UnixNano()))
 	return []*User{&admin}
 }

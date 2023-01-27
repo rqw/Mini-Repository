@@ -42,12 +42,12 @@ type Resp struct {
 	Result  interface{} `json:"result"`
 }
 type Page[T any] struct {
-	No        int               `json:"no"`
-	Total     int               `json:"total"`
-	Condition map[string]string `json:"condition"`
-	Orders    []string          `json:"orders"`
-	Capacity  int               `json:"capacity"`
-	DataList  []T               `json:"dataList"`
+	No        int               `json:"no"`        //当前页码，从1开始
+	Total     int               `json:"total"`     //记录总数
+	Condition map[string]string `json:"condition"` //查询条件
+	Orders    []string          `json:"orders"`    //排序
+	Capacity  int               `json:"capacity"`  //页容量
+	DataList  []T               `json:"dataList"`  //数据列表
 }
 
 func (page Page[any]) GetFirst() int {
