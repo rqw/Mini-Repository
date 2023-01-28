@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Mini-Repository/src/permission"
 	"Mini-Repository/src/repository"
 	"Mini-Repository/src/user"
 	"Mini-Repository/src/util"
@@ -20,6 +21,7 @@ func main() {
 	util.RouterRegister()
 	user.RouterRegister()
 	repository.RouterRegister()
+	permission.RouterRegister()
 	if bytes, err := json.Marshal(config); err == nil {
 		log.Debugf("启动参数: %s", bytes)
 	} else {

@@ -45,7 +45,7 @@ func queryList(page *util.Page[*User]) error {
 	tmpList := make([]*User, 0)
 	var filters []func(arg User) bool
 	if page.Condition != nil {
-		filters = make([]func(arg User) bool, len(page.Condition))
+		filters = make([]func(arg User) bool, 0)
 		if fullname, ok := page.Condition["fullname"]; ok {
 			filters = append(filters, func(arg User) bool { return strings.Contains(arg.Fullname, fullname) })
 		}
@@ -73,8 +73,8 @@ func queryList(page *util.Page[*User]) error {
 func matchUser(user User, filters []func(arg User) bool) bool {
 	cnt := len(filters)
 	if cnt > 0 {
-		for i := 0; i < cnt; i++ {
-			if filters[i](user) {
+		for _, filter := range filters {
+			if filter(user) {
 				return true
 			}
 		}
