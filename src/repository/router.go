@@ -3,12 +3,13 @@ package repository
 import (
 	"Mini-Repository/src/util"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RouterRegister() {
@@ -46,8 +47,15 @@ func _saveRepository(c *gin.Context) {
 	}
 }
 func _queryRepository(c *gin.Context) {
-	c.JSON(http.StatusOK, util.SUCCESS(list))
+	if page, err := util.GetParamJson[util.Page[*Repository]](c); err == nil {
+		if err := queryList(&page); err == nil {
+			c.JSON(http.StatusOK, util.SUCCESS(page))
+			return
+		}
+		c.JSON(http.StatusOK, util.FAIL(util.MsgCodeFail, err))
+	}
 }
+
 func _viewRepository(c *gin.Context) {
 	// todo: implement
 }

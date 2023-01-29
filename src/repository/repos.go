@@ -4,10 +4,11 @@ import (
 	"Mini-Repository/src/permission"
 	"Mini-Repository/src/util"
 	"fmt"
+	"strings"
 )
 
 func SaveRepository(repos *Repository) string {
-	if _, state := Store[repos.Name]; !state {
+	if _, state := Store[repos.Name]; state {
 		return util.MsgCodeReposExists
 	}
 
@@ -60,4 +61,44 @@ func loadFile() []*Repository {
 		saveToFile(cache)
 	}
 	return cache
+}
+
+func queryList(page *util.Page[*Repository]) error {
+	tmpList := make([]*Repository, 0)
+	var filters []func(arg Repository) bool
+	if page.Condition != nil {
+		filters = make([]func(arg Repository) bool, 0)
+		if name, ok := page.Condition["name"]; ok {
+			filters = append(filters, func(arg Repository) bool { return strings.Contains(arg.Name, name) })
+		}
+	}
+	current := 0
+	index := 0
+	first := page.GetFirst()
+	last := page.Capacity - 1
+	for _, u := range list {
+		if match(*u, filters) {
+			if current >= first && index <= last {
+				tmpList = append(tmpList, u)
+				index++
+			}
+			current++
+		}
+	}
+	page.DataList = tmpList
+	page.Total = current
+	return nil
+}
+
+func match(repos Repository, filters []func(arg Repository) bool) bool {
+	cnt := len(filters)
+	if cnt > 0 {
+		for _, filter := range filters {
+			if filter(repos) {
+				return true
+			}
+		}
+		return false
+	}
+	return true
 }

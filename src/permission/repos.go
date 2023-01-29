@@ -65,12 +65,13 @@ func GetPermissionList(ids []int) []Permission {
 	return permList
 }
 func CompileToRegexp(ids []int) *regexp.Regexp {
-	validRegexList := make([]string, len(ids))
+	validRegexList := make([]string, len(ids)+1)
 	for i, id := range ids {
 		if perm, s := cache[id]; s {
 			validRegexList[i] = perm.ValidRegex
 		}
 	}
+	validRegexList[len(ids)] = "POST@/user/passwd/?"
 	regexStr := fmt.Sprintf("^((%s))(\\?.*)?$", strings.Join(validRegexList, ")|("))
 	return regexp.MustCompile(regexStr)
 }

@@ -12,6 +12,7 @@ func RouterRegister() {
 	util.Engine.GET("/user/:id", _getUserInfoById)
 	util.Engine.DELETE("/user/:id", _dropUserById)
 	util.Engine.PUT("/user", _saveUserInfo)
+	util.Engine.POST("/user/passwd", _passwd)
 	util.Engine.POST("/user", _queryUser)
 	util.Engine.POST("/user/login", _login)
 }
@@ -71,5 +72,17 @@ func _queryUser(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, util.FAIL(util.MsgCodeFail, err))
+	}
+}
+func _passwd(c *gin.Context) {
+	if passwdInfo, err := util.GetParamJson[PasswdInfo](c); err == nil {
+		o, _ := c.Get("current")
+		user := o.(User)
+		passwdInfo.ID = user.ID
+		if modifyPassword(&passwdInfo) {
+			c.JSON(http.StatusOK, util.SUCCESS(nil))
+		} else {
+			c.JSON(http.StatusOK, util.FAIL(util.MsgCodeFail, nil))
+		}
 	}
 }

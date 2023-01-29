@@ -83,7 +83,7 @@ func matchUser(user User, filters []func(arg User) bool) bool {
 	return true
 }
 func saveUser(user *User) string {
-	if _, state := LoginNameCache[user.LoginName]; !state {
+	if _, state := LoginNameCache[user.LoginName]; state && user.ID <= 0 {
 		return util.MsgCodeUserExists
 	}
 	if user.Password == "" {
@@ -100,6 +100,8 @@ func saveUser(user *User) string {
 	} else {
 		localUser.Password = user.Password
 		localUser.Fullname = user.Fullname
+		localUser.Mail = user.Mail
+		localUser.Tel = user.Tel
 		localUser.Act = user.Act
 		localUser.Mrt = user.Mrt
 		localUser.PermissionList = user.PermissionList
@@ -108,7 +110,14 @@ func saveUser(user *User) string {
 	saveToFile(list)
 	return util.MsgCodeSuccess
 }
-
+func modifyPassword(info *PasswdInfo) bool {
+	if user, ok := cache[info.ID]; ok && user.Password == info.OldPassword {
+		user.Password = info.NewPassword
+		saveToFile(list)
+		return true
+	}
+	return false
+}
 func defaultPermission() []*User {
 	admin := User{ID: 1, LoginName: "admin", Password: util.Md5("admin"), Fullname: "系统管理员", PermissionList: []int{1, 2, 3}, Act: util.Md5(strconv.FormatInt(time.Now().UnixNano(), 10))}
 	admin.Mrt = util.Md5(fmt.Sprintf("%d-%s-%s-%d", admin.ID, admin.LoginName, admin.Password, time.Now().UnixNano()))
