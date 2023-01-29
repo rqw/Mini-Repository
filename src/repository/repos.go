@@ -8,7 +8,7 @@ import (
 )
 
 func SaveRepository(repos *Repository) string {
-	if _, state := Store[repos.Name]; state {
+	if _, state := Store[repos.Name]; state && repos.Id <= 0 {
 		return util.MsgCodeReposExists
 	}
 
