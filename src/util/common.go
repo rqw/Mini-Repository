@@ -27,7 +27,7 @@ func LoadConfig() *Config {
 	return config
 }
 func GetFileSystem() http.FileSystem {
-	return fs
+	return httpFs
 }
 func GetFileServer() http.Handler {
 	return fileServer

@@ -19,7 +19,7 @@ func RouterRegister() {
 	util.Engine.POST("/repository", _queryRepository)
 	util.Engine.POST("/repository/view/:libName", _viewComponent)
 	util.Engine.POST("/repository/del/:libName", _deleteComponent)
-	util.Engine.POST("/repository/upload/:libName", _uploadComponent)
+	util.Engine.POST("/repository/upload/:libName/*filePath", _uploadComponent)
 	util.Engine.PUT("/:context/:libName/*filePath", put)
 	util.Engine.GET("/:context/:libName/*filePath", get)
 	util.Engine.HEAD("/:context/:libName/*filePath", get)
@@ -66,28 +66,70 @@ func _viewComponent(c *gin.Context) {
 	reposName := c.Param("libName")
 	if repos, err := getRepositoryByName(reposName); err == nil {
 		if compo, err := util.GetParamJson[Component](c); err == nil {
-			path := repos.GetComponent(compo.Path)
-			print(path)
-
+			c.JSON(http.StatusOK, repos.GetComponentList(compo.Path))
 		} else {
 			c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
-
 		}
 	} else {
 		c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
-
 	}
-	// todo: implement
 }
 func _deleteComponent(c *gin.Context) {
-	// libName := c.Param("libName")
+	var (
+		err   error
+		repos Repository
+		compo Component
+	)
+	reposName := c.Param("libName")
+	if repos, err = getRepositoryByName(reposName); err == nil {
+		if compo, err = util.GetParamJson[Component](c); err == nil {
+			if err = repos.delComponent(&compo); err == nil {
+				c.JSON(http.StatusOK, util.SUCCESS(nil))
+				return
+			}
+		}
+	}
+	c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
 
-	// todo: implement
 }
 func _uploadComponent(c *gin.Context) {
-	// libName := c.Param("libName")
-
-	// todo: implement
+	var (
+		err        error
+		repository *Repository
+		length     int
+		data       []byte
+	)
+	length, err = strconv.Atoi(c.GetHeader("Content-Length"))
+	if length <= 0 {
+		err = fmt.Errorf("invalid content length")
+	}
+	if err == nil {
+		if data, err = io.ReadAll(c.Request.Body); err == nil {
+			if length != len(data) {
+				err = fmt.Errorf("invalid content length not equal to data length")
+			}
+			if err == nil {
+				if repository, err = checkAndGetRepository(c); err == nil {
+					if repository.Mode&2 != 2 {
+						err = fmt.Errorf("invalid repository mode is not support write")
+					}
+					if err == nil {
+						filePath := c.Param("filePath")
+						localFilePath := repository.GetComponent(filePath)
+						if err = saveFile(localFilePath, data); err == nil {
+							if err = util.GenerateHash(localFilePath); err != nil {
+								err = fmt.Errorf("generate hash error: %v", err)
+							} else {
+								c.JSON(http.StatusOK, util.SUCCESS(nil))
+								return
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
 }
 
 func get(c *gin.Context) {

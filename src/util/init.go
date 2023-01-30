@@ -33,7 +33,7 @@ var (
 	}
 	authExcludeRegexp *regexp.Regexp
 	Engine            *gin.Engine
-	fs                http.FileSystem
+	httpFs            http.FileSystem
 	fileServer        http.Handler
 	Static            embed.FS
 	AuthHandler       func(c *gin.Context) bool
@@ -53,8 +53,8 @@ func init() {
 }
 func initRouter() {
 	//处理路由信息
-	fs = http.Dir(config.LocalRepository)
-	fileServer = http.StripPrefix(path.Join("/", config.Context), http.FileServer(fs))
+	httpFs = http.Dir(config.LocalRepository)
+	fileServer = http.StripPrefix(path.Join("/", config.Context), http.FileServer(httpFs))
 	gin.SetMode(gin.ReleaseMode)
 	Engine = gin.Default()
 	Engine.Use(GinLogger())

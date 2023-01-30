@@ -10,6 +10,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -83,4 +84,39 @@ func checkAuthPublish(c *gin.Context) bool {
 	}
 
 	return false
+}
+
+func (repos Repository) GetComponent(filePath string) string {
+	if repos.DiskPath != "" {
+		return path.Join(repos.DiskPath, filePath)
+	}
+	return path.Join(config.Context, repos.Name, filePath)
+}
+func (repos Repository) GetComponentList(filePath string) []*Component {
+	list, err := os.ReadDir(repos.GetComponent(filePath))
+	if err != nil && len(list) == 0 {
+		return []*Component{}
+	}
+	components := make([]*Component, len(list))
+	for _, f := range list {
+		component := Component{
+			Name:  f.Name(),
+			IsDir: f.IsDir(),
+		}
+		if f.IsDir() {
+			if info, err := f.Info(); err != nil {
+				component.Size = info.Size()
+				component.ModTime = info.ModTime().UnixMilli()
+			}
+		}
+		components = append(components, &component)
+	}
+	return components
+}
+func (repos Repository) delComponent(component *Component) error {
+	if component.IsDir {
+		return os.RemoveAll(component.Path)
+	} else {
+		return os.Remove(component.Path)
+	}
 }

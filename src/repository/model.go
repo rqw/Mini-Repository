@@ -1,9 +1,5 @@
 package repository
 
-import (
-	"path"
-)
-
 type Repository struct {
 	Id           int      `json:"id"`
 	Name         string   `json:"name"`
@@ -16,14 +12,7 @@ type Repository struct {
 type Component struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
-	Type    int    `json:"type"` // 类型：0 目录 1 文件
+	IsDir   bool   `json:"isDir"`
 	Size    int64  `json:"size"`
 	ModTime int64  `json:"modTime"`
-}
-
-func (repos Repository) GetComponent(filePath string) string {
-	if repos.DiskPath != "" {
-		return path.Join(repos.DiskPath, filePath)
-	}
-	return path.Join(config.Context, repos.Name, filePath)
 }
