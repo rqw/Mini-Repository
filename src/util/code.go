@@ -10,4 +10,5 @@ const (
 	MsgCodeTokenValidFail  = "TOKEN-VALID-FAIL"
 	MsgCodeAuthFail        = "TOKEN-AUTH-FAIL"
 	MsgCodeReposExists     = "REPOS-EXISTS"
+	MsgCodeReposNotExists  = "REPOS-NOT-EXISTS"
 )

@@ -17,9 +17,9 @@ func RouterRegister() {
 	util.Engine.DELETE("/repository/:id", _dropRepository)
 	util.Engine.PUT("/repository", _saveRepository)
 	util.Engine.POST("/repository", _queryRepository)
-	util.Engine.POST("/repository/view/:libName", _viewRepository)
-	util.Engine.POST("/repository/del/:libName", _deleteRepository)
-	util.Engine.POST("/repository/upload/:libName", _uploadRepository)
+	util.Engine.POST("/repository/view/:libName", _viewComponent)
+	util.Engine.POST("/repository/del/:libName", _deleteComponent)
+	util.Engine.POST("/repository/upload/:libName", _uploadComponent)
 	util.Engine.PUT("/:context/:libName/*filePath", put)
 	util.Engine.GET("/:context/:libName/*filePath", get)
 	util.Engine.HEAD("/:context/:libName/*filePath", get)
@@ -55,14 +55,38 @@ func _queryRepository(c *gin.Context) {
 		c.JSON(http.StatusOK, util.FAIL(util.MsgCodeFail, err))
 	}
 }
+func getRepositoryByName(name string) (Repository, error) {
+	if repos, ok := Store[name]; ok {
+		return *repos, nil
+	} else {
+		return *repos, fmt.Errorf(util.MsgCodeReposNotExists)
+	}
+}
+func _viewComponent(c *gin.Context) {
+	reposName := c.Param("libName")
+	if repos, err := getRepositoryByName(reposName); err == nil {
+		if compo, err := util.GetParamJson[Component](c); err == nil {
+			path := repos.GetComponent(compo.Path)
+			print(path)
 
-func _viewRepository(c *gin.Context) {
+		} else {
+			c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
+
+		}
+	} else {
+		c.JSON(http.StatusOK, util.FAIL(err.Error(), nil))
+
+	}
 	// todo: implement
 }
-func _deleteRepository(c *gin.Context) {
+func _deleteComponent(c *gin.Context) {
+	// libName := c.Param("libName")
+
 	// todo: implement
 }
-func _uploadRepository(c *gin.Context) {
+func _uploadComponent(c *gin.Context) {
+	// libName := c.Param("libName")
+
 	// todo: implement
 }
 
@@ -85,12 +109,11 @@ func get(c *gin.Context) {
 		return
 	}
 
-	localFilePath := path.Join(repository.DiskPath, filePath)
+	localFilePath := repository.GetComponent(filePath)
 
 	f, err := fs.Open(localFilePath)
 	defer closeFile(f)
 
-	localFilePath = path.Join(config.LocalRepository, localFilePath)
 	if err != nil && len(repository.Mirror) > 0 {
 		// 尝试从url镜像获取返回
 		response := readRemote(repository, filePath)
@@ -125,7 +148,7 @@ func get(c *gin.Context) {
 		}
 	}
 
-	u := fmt.Sprintf("/%s/%s%s", config.Context, repository.DiskPath, filePath)
+	u := repository.GetComponent(filePath)
 	c.Request.URL.RawPath = u
 	c.Request.URL.Path = u
 
@@ -158,7 +181,7 @@ func put(c *gin.Context) {
 	}
 
 	filePath := c.Param("filePath")
-	localFilePath := path.Join(config.LocalRepository, repository.DiskPath, filePath)
+	localFilePath := repository.GetComponent(filePath)
 	if err = saveFile(localFilePath, data); err != nil {
 		c.String(http.StatusInternalServerError, fmt.Sprintf("write file failed. message: %v\n", err))
 		return

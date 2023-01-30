@@ -9,7 +9,7 @@ type Config struct {
 	Port            string        `yaml:"port" default:"8888"`
 	Context         string        `yaml:"context" default:"repos"`
 	LocalRepository string        `yaml:"localRepository" default:"./repos"`
-	AuthExclude     string        `yaml:"authExclude" default:"/,/ui,/repos/*,/user/login"`
+	AuthExclude     string        `yaml:"authExclude" default:"/,/ui,/repos/?*,/user/login"`
 	DataDir         string        `yaml:"dataDir" default:"./data"`
 	User            []*User       `yaml:"user" default:"[{\"Name\":\"user\",\"Password\":\"password\"}]"`
 	Repository      []*Repository `yaml:"repository" default:"[{\"Id\":\"public\",\"Name\":\"mirror\",\"Mirror\":[\"https://repo1.maven.org/maven2\",\"https://maven.aliyun.com/nexus/content/repositories/public\"]}]"`
